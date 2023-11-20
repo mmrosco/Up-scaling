@@ -255,6 +255,7 @@ class Fluxes:
         # in g/mol
         co2_atomic_mass = 44.01
         ch4_atomic_mass = 16.04
+        n2o_atomic_mass = 44.013
         
         boot_data = {cols[0]: cs, cols[1]: ceq, cols[2]: ks}
         self.df_boot = pd.DataFrame(boot_data)
@@ -312,21 +313,25 @@ class Fluxes:
         n2o_sgwp = 270
         n2o_sgcp = 349
         if self.gas == 'diss CH4':
-                self.df_boot[flux_gwp] = (self.df_boot[flux_name]*ch4_sgwp).where(self.df_boot[flux_name]>0)
-                print('The median of {} in {} is {:0.2f} (mmol CO2-eq/m2*d)'.format(self.gas, self.wb_type, self.df_boot[flux_gwp].median())) 
-                print('The standard error of {} in {} is {:0.2f} (mmol CO2-eq/m2*d)'.format(self.gas, self.wb_type, self.df_boot[flux_gwp].std())) 
+            # First convert CH4 flux from mmol m-2 d-1 to kg m-2 d-1
+                self.df_boot[flux_gwp] = (self.df_boot[flux_name]*ch4_atomic_mass *10**-6*ch4_sgwp).where(self.df_boot[flux_name]>0)
+                print('The median of {} in {} is {:0.2f} (kg CO2-eq/m2*d)'.format(self.gas, self.wb_type, self.df_boot[flux_gwp].median())) 
+                print('The standard error of {} in {} is {:0.2f} (kg CO2-eq/m2*d)'.format(self.gas, self.wb_type, self.df_boot[flux_gwp].std())) 
                 ci_co2eq =  self.df_boot[flux_gwp].quantile([0.05, 0.95])
-                print('95% confidence interval of {} in {} is {:0.2f} to {:0.2f} (mmol CO2-eq/m2*d)'.format(self.gas, self.wb_type, ci_co2eq.iloc[0], ci_co2eq.iloc[1])) 
+                print('95% confidence interval of {} in {} is {:0.2f} to {:0.2f} (kg CO2-eq/m2*d)'.format(self.gas, self.wb_type, ci_co2eq.iloc[0], ci_co2eq.iloc[1])) 
                 #self.df_boot[flux_gwp] = (self.df_boot[flux_name]*ch4_sgcp).where(self.df_boot[flux_name]<0)
         elif self.gas == 'diss N2O':
-            # Also convert N2O flux from micromol/L to mmol/L
-                self.df_boot[flux_gwp] = (self.df_boot[flux_name]*10**-3*n2o_sgwp).where(self.df_boot[flux_name]>0)
-                self.df_boot[flux_sgcp] = (self.df_boot[flux_name]*10**-3*n2o_sgcp).where(self.df_boot[flux_name]<0)      
+            # First convert N2O flux from micromol m-2 d-1 to kg m-2 d-1
+                self.df_boot[flux_gwp] = (self.df_boot[flux_name]*10**-3*n2o_atomic_mass*10**-6*n2o_sgwp).where(self.df_boot[flux_name]>0)
+                self.df_boot[flux_sgcp] = (self.df_boot[flux_name]*10**-3*n2o_atomic_mass*10**-6*n2o_sgcp).where(self.df_boot[flux_name]<0)      
                 self.df_boot[flux_gwp].fillna(self.df_boot[flux_sgcp], inplace=True)
-                print('The median of {} in {} is {:0.2f} (mmol CO2-eq/m2*d)'.format(self.gas, self.wb_type, self.df_boot[flux_gwp].median())) 
-                print('The standard error of {} in {} is {:0.2f} (mmol CO2-eq/m2*d)'.format(self.gas, self.wb_type, self.df_boot[flux_gwp].std())) 
+                print('The median of {} in {} is {:0.2f} (kg CO2-eq/m2*d)'.format(self.gas, self.wb_type, self.df_boot[flux_gwp].median())) 
+                print('The standard error of {} in {} is {:0.2f} (kg CO2-eq/m2*d)'.format(self.gas, self.wb_type, self.df_boot[flux_gwp].std())) 
                 ci_co2eq =  self.df_boot[flux_gwp].quantile([0.05, 0.95])
-                print('95% confidence interval of {} in {} is {:0.2f} to {:0.2f} (mmol CO2-eq/m2*d)'.format(self.gas, self.wb_type, ci_co2eq.iloc[0], ci_co2eq.iloc[1])) 
+                print('95% confidence interval of {} in {} is {:0.2f} to {:0.2f} (kg CO2-eq/m2*d)'.format(self.gas, self.wb_type, ci_co2eq.iloc[0], ci_co2eq.iloc[1])) 
+        else:
+        # Convert CO2 fluxes to CO2 kg m-2 d-1   
+            self.df_boot[flux_gwp] = (self.df_boot[flux_name]*co2_atomic_mass *10**-6)
                  
         return self.df_boot
     
@@ -417,8 +422,8 @@ class tundra_flux:
             ch4_sgwp = 45
             ch4_sgcp = 203
             
-            t_flux_16['ch4 flux co2-eq'] = (t_flux_16['ch4_mmol']*ch4_sgwp).where(t_flux_16['ch4_mmol']>0)
-            t_flux_16['ch4 sgcp'] = (t_flux_16['ch4_mmol']*ch4_sgcp).where(t_flux_16['ch4_mmol']<0)
+            t_flux_16['ch4 flux co2-eq'] = (t_flux_16['ch4_mmol']*ch4_atomic_mass *10**-6*ch4_sgwp).where(t_flux_16['ch4_mmol']>0)
+            t_flux_16['ch4 sgcp'] = (t_flux_16['ch4_mmol']*ch4_atomic_mass *10**-6*ch4_sgcp).where(t_flux_16['ch4_mmol']<0)
             t_flux_16['ch4 flux co2-eq'].fillna(t_flux_16['ch4 sgcp'], inplace=True)
             
             # Select fluxes in low surface water (< 0.5%) wind areas, from Parmentier et al., 2001
@@ -426,7 +431,7 @@ class tundra_flux:
             t_flux_16_dry2 = t_flux_16.drop(t_flux_16[(t_flux_16.WD > 95)].index)
             t_flux_16_mixed = t_flux_16.drop(t_flux_16[(t_flux_16.WD > 250) | (t_flux_16.WD < 190)].index)
             
-            # Create new array with fluxes from wind areas in unit mmol CO2-eq m-2 d-1
+            # Create new array with fluxes from wind areas in unit kg CO2-eq m-2 d-1
             self.flux_array = np.array(t_flux_16_dry1['ch4 flux co2-eq'])
             a = t_flux_16_dry2['ch4 flux co2-eq'].to_numpy()
             b = t_flux_16_mixed['ch4 flux co2-eq'].to_numpy()
@@ -440,9 +445,8 @@ class tundra_flux:
         """ Returns an array of tundra N2O fluxes in units of mmol CO2-eq m-2 d-1 """
         
         n2o_tundra = pd.read_excel(fname, engine='openpyxl', skiprows=1)
-        # Convert to mmol m-2 d-1
-        n2o_atomic_mass = 44.013
-        n2o_tundra['n2o flux'] =  n2o_tundra['flux'] * 10**-6 / n2o_atomic_mass  * 10**3
+        # Convert from microg m-2 d-1 to kg m-2 d-1
+        n2o_tundra['n2o flux'] =  n2o_tundra['flux'] * 10**-9
         
         n2o_sgwp = 270
         n2o_sgcp = 349
