@@ -10,14 +10,6 @@ import matplotlib
 from matplotlib.ticker import ScalarFormatter
 
 def surface_areas(fname, wbtype):     
-        """
-        Generates bootstrapped median samples 
-
-        :fname: filepath and name
-        :wbtype: water body type surface area coverage to select
-        :return: float representing area in km2
-
-        """ 
     with open(fname) as f:
         s = f.read()
         areas_list = ast.literal_eval(s)
@@ -54,7 +46,7 @@ lake_co2_s_boot = lake_co2.bootstrapping('diss co2', 1000)
 lake_co2_eq_boot = lake_co2.bootstrapping('CO2 eq', 1000)
 lake_co2_k_boot = lake_co2.bootstrapping('k', 1000)
 
-lake_co2.fluxes_calc(lake_co2_s_boot, lake_co2_eq_boot, lake_co2_k_boot, ['diss co2', 'co2 eq', 'k'], 'flux co2', 'flux co2-c mmol', 'flux co2-2 mg', '', '')
+lake_co2.fluxes_calc(lake_co2_s_boot, lake_co2_eq_boot, lake_co2_k_boot, ['diss co2', 'co2 eq', 'k'], 'flux co2', 'flux co2-c mmol', 'flux co2-2 mg', 'flux co2-eq', '')
 
 
 # Pond CO2
@@ -74,7 +66,7 @@ pond_co2_s_boot = pond_co2.bootstrapping('diss co2', 1000)
 pond_co2_eq_boot = pond_co2.bootstrapping('CO2 eq', 1000)
 pond_co2_k_boot = pond_co2.bootstrapping('k', 1000)
 
-pond_co2.fluxes_calc(pond_co2_s_boot, pond_co2_eq_boot, pond_co2_k_boot, ['diss co2', 'co2 eq', 'k'], 'flux co2', 'flux co2-c mmol', 'flux co2-2 mg', '', '')
+pond_co2.fluxes_calc(pond_co2_s_boot, pond_co2_eq_boot, pond_co2_k_boot, ['diss co2', 'co2 eq', 'k'], 'flux co2', 'flux co2-c mmol', 'flux co2-2 mg', 'flux co2-eq', '')
 
 
 # Fluvial CO2 
@@ -94,7 +86,7 @@ fluvial_co2_s_boot = fluvial_co2.bootstrapping('diss co2', 1000)
 fluvial_co2_eq_boot = fluvial_co2.bootstrapping('CO2 eq', 1000)
 fluvial_co2_k_boot = fluvial_co2.bootstrapping('k', 1000)
 
-fluvial_co2.fluxes_calc(fluvial_co2_s_boot, fluvial_co2_eq_boot, fluvial_co2_k_boot, ['diss co2', 'co2 eq', 'k'], 'flux co2', 'flux co2-c mmol', 'flux co2-2 mg', '', '')
+fluvial_co2.fluxes_calc(fluvial_co2_s_boot, fluvial_co2_eq_boot, fluvial_co2_k_boot, ['diss co2', 'co2 eq', 'k'], 'flux co2', 'flux co2-c mmol', 'flux co2-2 mg', 'flux co2-eq', '')
 
 # Calculate CH4 fluxes 2016 --------------------------------------------------------------------------------------
 # Lake CH4 
@@ -196,182 +188,238 @@ fluvial_n2o.fluxes_calc(fluvial_n2o_s_boot, fluvial_n2o_eq_boot, fluvial_n2o_k_b
 # C emissions inland waters CO2-C + CH4-C 2016 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Pond CO2-C + CH4-C emissions
 pond_co2_16 = (pond_co2.df_boot['flux co2-2 mg'] * pond_area_16) *10**-9
+mean_pond_co2_16  = np.mean(pond_co2_16)
 std_pond_co2_16  = np.std(pond_co2_16)
-unc_pond_co2_16  = std_pond_co2_16 + math.sqrt((0.15*np.median(pond_co2_16))**2 + (0.15*(pond_area_16/1000000))**2)
+unc_pond_co2_16  = mean_pond_co2_16 * math.sqrt((std_pond_co2_16/mean_pond_co2_16)**2 + (0.15)**2)
 pond_ch4_16 = (pond_ch4.df_boot['flux ch4-2 mg'] * pond_area_16) *10**-9
+mean_pond_ch4_16  = np.mean(pond_ch4_16)
 std_pond_ch4_16  = np.std(pond_ch4_16)
-unc_pond_ch4_16  = std_pond_ch4_16 + math.sqrt((0.15*np.median(pond_ch4_16))**2 + (0.15*(pond_area_16/1000000))**2)
+unc_pond_ch4_16  = mean_pond_ch4_16 * math.sqrt((std_pond_ch4_16/mean_pond_ch4_16)**2 + (0.15)**2)
 pond_c_16 = pond_co2_16 + pond_ch4_16
+mean_pond_c_16 = np.mean(pond_c_16)
 median_pond_c_16 = np.median(pond_c_16)
 conf_int_pond_c_16 = np.percentile(pond_c_16, [5, 95])
 std_pond_c_16 = np.std(pond_c_16)
-unc_pond_c_16 = std_pond_c_16 + math.sqrt((0.15*median_pond_c_16)**2 + (0.15*(pond_area_16/1000000))**2)
-print('Median pond CO2-C emissions are {:0.2f} ± {:0.2f} (Mg C d-1)'.format(np.median(pond_co2_16), unc_pond_co2_16))
-print('Median pond CH4-C emissions are {:0.2f} ± {:0.2f} (Mg C d-1)'.format(np.median(pond_ch4_16), unc_pond_ch4_16))
-print('Median pond C emissions (CO2-C + CH4-C) are {:0.2f} ± {:0.2f} (Mg C d-1)'.format(median_pond_c_16, unc_pond_c_16))    
+unc_pond_c_16 = mean_pond_c_16 * math.sqrt((std_pond_c_16/mean_pond_c_16)**2 + 0.15**2)
+print('Median pond CO2-C emissions are {:0.2f} (Mg C d-1)'.format(np.median(pond_co2_16)))
+print('Mean pond CO2-C emissions are {:0.2f} ± {:0.2f} (Mg C d-1)'.format(mean_pond_co2_16, unc_pond_co2_16))
+print('Median pond CH4-C emissions are {:0.2f} (Mg C d-1)'.format(np.median(pond_ch4_16)))
+print('Mean pond CH4-C emissions are {:0.2f} ± {:0.2f} (Mg C d-1)'.format(mean_pond_ch4_16, unc_pond_ch4_16))
+print('Median pond C emissions (CO2-C + CH4-C) are {:0.2f} (Mg C d-1)'.format(median_pond_c_16))    
+print('Mean pond C emissions (CO2-C + CH4-C) are {:0.2f} ± {:0.2f} (Mg C d-1)'.format(mean_pond_c_16, unc_pond_c_16))    
 print('Pond C emissions (CO2-C + CH4-C) range from {:0.2f} to {:0.2f} (Mg C d-1) [95% CI]'.format(conf_int_pond_c_16[0], conf_int_pond_c_16[1]))  
 
 # Lake CO2-C + CH4-C emissions
 lake_co2_16 = (lake_co2.df_boot['flux co2-2 mg'] * lake_area_16) *10**-9
+mean_lake_co2_16  = np.mean(lake_co2_16)
 std_lake_co2_16  = np.std(lake_co2_16)
-unc_lake_co2_16  = std_lake_co2_16 + math.sqrt((0.15*np.median(lake_co2_16))**2 + (0.15*(lake_area_16/1000000))**2)
+unc_lake_co2_16  = mean_lake_co2_16 * math.sqrt((std_lake_co2_16/mean_lake_co2_16)**2 + 0.15**2)
 lake_ch4_16 = (lake_ch4.df_boot['flux ch4-2 mg'] * lake_area_16) *10**-9
+mean_lake_ch4_16  = np.mean(lake_ch4_16)
 std_lake_ch4_16  = np.std(lake_ch4_16)
-unc_lake_ch4_16  = std_lake_ch4_16 + math.sqrt((0.15*np.median(lake_ch4_16))**2 + (0.15*(lake_area_16/1000000))**2)
+unc_lake_ch4_16  = mean_lake_ch4_16 * math.sqrt((std_lake_ch4_16/mean_lake_ch4_16)**2 + 0.15**2)
 lake_c_16 = lake_co2_16 + lake_ch4_16
 median_lake_c_16 = np.median(lake_c_16)
+mean_lake_c_16 = np.mean(lake_c_16)
 conf_int_lake_c_16 = np.percentile(lake_c_16, [5, 95])
 std_lake_c_16 = np.std(lake_c_16)
-unc_lake_c_16 = std_lake_c_16 + math.sqrt((0.15*np.median(lake_c_16))**2 + (0.15*(lake_area_16/1000000))**2)
-print('Median lake CO2-C emissions are {:0.2f} ± {:0.2f} (Mg C d-1)'.format(np.median(lake_co2_16), unc_lake_co2_16))
-print('Median lake CH4-C emissions are {:0.2f} ± {:0.2f} (Mg C d-1)'.format(np.median(lake_ch4_16), unc_lake_ch4_16))
-print('Median lake C emissions (CO2-C + CH4-C) are {:0.2f} ± {:0.2f} (Mg C d-1)'.format(median_lake_c_16, unc_lake_c_16))    
+unc_lake_c_16 = mean_lake_c_16 * math.sqrt((std_lake_c_16/mean_lake_c_16)**2 + 0.15**2)
+print('Median lake CO2-C emissions are {:0.2f}  (Mg C d-1)'.format(np.median(lake_co2_16)))
+print('Mean lake CO2-C emissions are {:0.2f} ± {:0.2f} (Mg C d-1)'.format(np.mean(lake_co2_16), unc_lake_co2_16))
+print('Median lake CH4-C emissions are {:0.2f}  (Mg C d-1)'.format(np.median(lake_ch4_16)))
+print('Mean lake CH4-C emissions are {:0.2f} ± {:0.2f} (Mg C d-1)'.format(np.mean(lake_ch4_16), unc_lake_ch4_16))
+print('Median lake C emissions (CO2-C + CH4-C) are {:0.2f}  (Mg C d-1)'.format(median_lake_c_16))  
+print('Mean lake C emissions (CO2-C + CH4-C) are {:0.2f} ± {:0.2f} (Mg C d-1)'.format(mean_lake_c_16, unc_lake_c_16))      
 print('Lake C emissions (CO2-C + CH4-C) range from {:0.2f} to {:0.2f} (Mg C d-1) [95% CI]'.format(conf_int_lake_c_16[0], conf_int_lake_c_16[1]))  
 
 # Fluvial CO2-C + CH4-C emissions
 fluvial_co2_16 = (fluvial_co2.df_boot['flux co2-2 mg'] * fluvial_area_16) *10**-9
+mean_fluvial_co2_16  = np.mean(fluvial_co2_16)
 std_fluvial_co2_16  = np.std(fluvial_co2_16)
-unc_fluvial_co2_16  = std_fluvial_co2_16 + math.sqrt((0.15*np.median(fluvial_co2_16))**2 + (0.15*(fluvial_area_16/1000000))**2)
+unc_fluvial_co2_16  = mean_fluvial_co2_16 * math.sqrt((std_fluvial_co2_16/mean_fluvial_co2_16)**2 + 0.15**2)
 fluvial_ch4_16 = (fluvial_ch4.df_boot['flux ch4-2 mg'] * fluvial_area_16) *10**-9
+mean_fluvial_ch4_16  = np.mean(fluvial_ch4_16)
 std_fluvial_ch4_16  = np.std(fluvial_ch4_16)
-unc_fluvial_ch4_16  = std_fluvial_ch4_16 + math.sqrt((0.15*np.median(fluvial_ch4_16))**2 + (0.15*(fluvial_area_16/1000000))**2)
+unc_fluvial_ch4_16  = mean_fluvial_ch4_16 * math.sqrt((std_fluvial_ch4_16/mean_fluvial_ch4_16)**2 + 0.15**2)
 fluvial_c_16 = fluvial_co2_16 + fluvial_ch4_16
 median_fluvial_c_16 = np.median(fluvial_c_16)
+mean_fluvial_c_16  = np.mean(fluvial_c_16)
 conf_int_fluvial_c_16 = np.percentile(fluvial_c_16, [5, 95])
 std_fluvial_c_16 = np.std(fluvial_c_16)
-unc_fluvial_c_16 = std_fluvial_c_16 + math.sqrt((0.15*np.median(fluvial_c_16))**2 + (0.15*(fluvial_area_16/1000000))**2)
-print('Median fluvial CO2-C emissions are {:0.2f} ± {:0.2f} (Mg C d-1)'.format(np.median(fluvial_co2_16), unc_fluvial_co2_16))
-print('Median fluvial CH4-C emissions are {:0.2f} ± {:0.2f} (Mg C d-1)'.format(np.median(fluvial_ch4_16), unc_fluvial_ch4_16))
-print('Median fluvial C emissions (CO2-C + CH4-C) are {:0.2f} ± {:0.2f} (Mg C d-1)'.format(median_fluvial_c_16, unc_fluvial_c_16))    
-print('Fluvial C emissions (CO2-C + CH4-C) range from {:0.2f} to {:0.2f} (Mg C d-1) [95% CI]'.format(conf_int_fluvial_c_16[0], conf_int_fluvial_c_16[1])) 
+unc_fluvial_c_16  = mean_fluvial_c_16 * math.sqrt((std_fluvial_c_16/mean_fluvial_c_16)**2 + 0.15**2)
+print('Median fluvial CO2-C emissions are {:0.2f}  (Mg C d-1)'.format(np.median(fluvial_co2_16)))
+print('Mean fluvial CO2-C emissions are {:0.2f} ± {:0.2f} (Mg C d-1)'.format(np.mean(fluvial_co2_16), unc_fluvial_co2_16))
+print('Median fluvial CH4-C emissions are {:0.2f}  (Mg C d-1)'.format(np.median(fluvial_ch4_16)))
+print('Mean fluvial CH4-C emissions are {:0.2f} ± {:0.2f} (Mg C d-1)'.format(np.mean(fluvial_ch4_16), unc_fluvial_ch4_16))
+print('Median fluvial C emissions (CO2-C + CH4-C) are {:0.2f}  (Mg C d-1)'.format(median_fluvial_c_16))  
+print('Mean fluvial C emissions (CO2-C + CH4-C) are {:0.2f} ± {:0.2f} (Mg C d-1)'.format(mean_fluvial_c_16, unc_fluvial_c_16))      
+print('fluvial C emissions (CO2-C + CH4-C) range from {:0.2f} to {:0.2f} (Mg C d-1) [95% CI]'.format(conf_int_fluvial_c_16[0], conf_int_fluvial_c_16[1]))  
 
 # Total inland water emissions
-co2_c_16 =  (lake_co2.df_boot['flux co2-2 mg'] * lake_area_16 + pond_co2.df_boot['flux co2-2 mg'] * pond_area_16 + fluvial_co2.df_boot['flux co2-2 mg'] * fluvial_area_16 ) * 10**-9
+co2_c_16 =  lake_co2_16 + pond_co2_16 + fluvial_co2_16
 co2_c_16_median = np.median(co2_c_16)
-ch4_c_16 = (lake_ch4.df_boot['flux ch4-2 mg'] * lake_area_16 + pond_ch4.df_boot['flux ch4-2 mg'] * pond_area_16 + fluvial_ch4.df_boot['flux ch4-2 mg'] * fluvial_area_16) * 10**-9
+co2_c_16_mean = np.mean(co2_c_16)
+ch4_c_16 = lake_ch4_16 + pond_ch4_16 + fluvial_ch4_16 
 ch4_c_16_median = np.median(ch4_c_16)
+ch4_c_16_mean = np.mean(ch4_c_16)
 
 emissions_c_16 = co2_c_16 + ch4_c_16
 median_emissions_c_16 = np.median(emissions_c_16)
+mean_emissions_c_16 = np.mean(emissions_c_16)
 conf_int_emissions_c_16 = np.percentile(emissions_c_16, [5, 95])
 unc_emissions_c_16 = math.sqrt(unc_pond_c_16**2 + unc_lake_c_16**2 + unc_fluvial_c_16**2)
-print('Median inland water C emissions (CO2-C + CH4-C) are {:0.2f} ± {:0.2f} (Mg C d-1)'.format(median_emissions_c_16, unc_emissions_c_16))    
+print('Median inland water C emissions (CO2-C + CH4-C) are {:0.2f} (Mg C d-1)'.format(median_emissions_c_16))    
 print('Inland water C emissions (CO2-C + CH4-C) range from {:0.2f} to {:0.2f} (Mg C d-1) [95% CI]'.format(conf_int_emissions_c_16[0], conf_int_emissions_c_16[1]))  
+print('Mean inland water C emissions (CO2-C + CH4-C) are {:0.2f} ± {:0.2f} (Mg C d-1)'.format(mean_emissions_c_16, unc_emissions_c_16))
 
-print('Inland water CO2 emissions accounted for {:2.2%} of the inland water CO2-C + CH4-C emissions in 2016'.format(co2_c_16_median / median_emissions_c_16))
-print('Inland water CH4 emissions accounted for {:2.2%} of the inland water CO2-C + CH4-C emissions in 2016'.format(ch4_c_16_median / median_emissions_c_16))
+print('Median inland water CO2 emissions accounted for {:2.2%} of the inland water CO2-C + CH4-C emissions in 2016'.format(co2_c_16_median / median_emissions_c_16))
+print('Mean inland water CO2 emissions accounted for {:2.2%} of the inland water CO2-C + CH4-C emissions in 2016'.format(co2_c_16_mean / mean_emissions_c_16))
+print('Median inland water CH4 emissions accounted for {:2.2%} of the inland water CO2-C + CH4-C emissions in 2016'.format(ch4_c_16_median / median_emissions_c_16))
+print('Mean inland water CH4 emissions accounted for {:2.2%} of the inland water CO2-C + CH4-C emissions in 2016'.format(ch4_c_16_mean / mean_emissions_c_16))
 
-print('Inland water lake emissions accounted for {:2.2%} of the inland water CO2-C + CH4-C emissions in 2016'.format(median_lake_c_16 / median_emissions_c_16))
-print('Inland water pond emissions accounted for {:2.2%} of the inland water CO2-C + CH4-C emissions in 2016'.format(median_pond_c_16 / median_emissions_c_16))
-print('Inland water fluvial emissions accounted for {:2.2%} of the inland water CO2-C + CH4-C emissions in 2016'.format(median_fluvial_c_16 / median_emissions_c_16))
+print('Median inland water lake emissions accounted for {:2.2%} of the inland water CO2-C + CH4-C emissions in 2016'.format(median_lake_c_16 / median_emissions_c_16))
+print('Mean inland water lake emissions accounted for {:2.2%} of the inland water CO2-C + CH4-C emissions in 2016'.format(mean_lake_c_16 / mean_emissions_c_16))
+print('Median inland water pond emissions accounted for {:2.2%} of the inland water CO2-C + CH4-C emissions in 2016'.format(median_pond_c_16 / median_emissions_c_16))
+print('Mean inland water pond emissions accounted for {:2.2%} of the inland water CO2-C + CH4-C emissions in 2016'.format(mean_pond_c_16 / mean_emissions_c_16))
+print('Median inland water fluvial emissions accounted for {:2.2%} of the inland water CO2-C + CH4-C emissions in 2016'.format(median_fluvial_c_16 / median_emissions_c_16))
+print('Mean inland water fluvial emissions accounted for {:2.2%} of the inland water CO2-C + CH4-C emissions in 2016'.format(mean_fluvial_c_16 / mean_emissions_c_16))
+
 
 # CO2, CH4 and N2O (GHG) inland water emissions in CO2-eq in 2016 --------------------------------------------------------------------------------------------------------
 # Lake GHG emissions in CO2-eq
-lake_co2_eq_16 = (lake_co2.df_boot['flux co2'] + lake_ch4.df_boot['flux ch4 co2eq'] + lake_n2o.df_boot['flux n2o co2eq'])* lake_area_16 *10**-6
-median_lake_co2_eq_16 = np.median(lake_co2_eq_16)
-
-lake_co2_co2_eq_16 = lake_co2.df_boot['flux co2'] * lake_area_16 *10**-6
-std_lake_co2_co2_eq_16 = np.std(lake_co2_eq_16)
-unc_lake_co2_co2_eq_16 = std_lake_co2_co2_eq_16 + math.sqrt((0.15*np.median(lake_co2_eq_16))**2 + (0.15*(lake_area_16/1000000))**2)
-lake_ch4_co2_eq_16 = lake_ch4.df_boot['flux ch4 co2eq']  * lake_area_16 *10**-6
+lake_co2_co2_eq_16 = lake_co2.df_boot['flux co2-eq'] * lake_area_16
+mean_lake_co2_co2_eq_16 = np.mean(lake_co2_co2_eq_16)
+std_lake_co2_co2_eq_16 = np.std(lake_co2_co2_eq_16)
+unc_lake_co2_co2_eq_16 = mean_lake_co2_co2_eq_16 * math.sqrt((std_lake_co2_co2_eq_16/mean_lake_co2_co2_eq_16)**2 + 0.15**2)
+lake_ch4_co2_eq_16 = lake_ch4.df_boot['flux ch4 co2eq']  * lake_area_16
+mean_lake_ch4_co2_eq_16 = np.mean(lake_ch4_co2_eq_16)
 std_lake_ch4_co2_eq_16 = np.std(lake_ch4_co2_eq_16)
-unc_lake_ch4_co2_eq_16 = std_lake_ch4_co2_eq_16 + math.sqrt((0.15*np.median(lake_ch4_co2_eq_16))**2 + (0.15*(lake_area_16/1000000))**2)
-lake_n2o_co2_eq_16 = lake_n2o.df_boot['flux n2o co2eq']* lake_area_16 *10**-6
+unc_lake_ch4_co2_eq_16 = mean_lake_ch4_co2_eq_16 * math.sqrt((std_lake_ch4_co2_eq_16/mean_lake_ch4_co2_eq_16)**2 + 0.15**2)
+lake_n2o_co2_eq_16 = lake_n2o.df_boot['flux n2o co2eq']* lake_area_16 
+mean_lake_n2o_co2_eq_16 = np.mean(lake_n2o_co2_eq_16)
 std_lake_n2o_co2_eq_16 = np.std(lake_n2o_co2_eq_16)
-unc_lake_n2o_co2_eq_16 = std_lake_n2o_co2_eq_16 + math.sqrt((0.15*np.median(lake_n2o_co2_eq_16))**2 + (0.15*(lake_area_16/1000000))**2)
+unc_lake_n2o_co2_eq_16 = mean_lake_n2o_co2_eq_16 * math.sqrt((std_lake_n2o_co2_eq_16/mean_lake_n2o_co2_eq_16)**2 + 0.15**2)
 median_lake_n2o_co2_eq_16 = np.median(lake_n2o_co2_eq_16)
 
+
+lake_co2_eq_16 = lake_co2_co2_eq_16 + lake_ch4_co2_eq_16 + lake_n2o_co2_eq_16
+median_lake_co2_eq_16 = np.median(lake_co2_eq_16)
+mean_lake_co2_eq_16 = np.mean(lake_co2_eq_16)
 conf_int_lake_co2_eq_16 = np.percentile(lake_co2_eq_16, [5, 95])
 std_lake_co2_eq_16 = np.std(lake_co2_eq_16)
-unc_lake_co2_eq_16 = std_lake_co2_eq_16 + math.sqrt((0.15*median_lake_co2_eq_16)**2 + (0.15*(lake_area_16/1000000))**2)
-print('Median lake N2O emissions  are {:0.2f}  (kilo CO2-eq mole d-1) in 2016'.format(median_lake_n2o_co2_eq_16))
-print('Median lake GHG emissions  are {:0.2f} ± {:0.2f} (kilo CO2-eq mole d-1)'.format(median_lake_co2_eq_16, unc_lake_co2_eq_16))    
-print('Lake GHG emissions range from {:0.2f} to {:0.2f} (kilo CO2-eq mole d-1) [95% CI]'.format(conf_int_lake_co2_eq_16 [0], conf_int_lake_co2_eq_16 [1]))  
+unc_lake_co2_eq_16 = mean_lake_co2_eq_16 * math.sqrt((std_lake_co2_eq_16/mean_lake_co2_eq_16)**2 + 0.15**2)
+print('Median lake N2O emissions  are {:0.2f}  (kg CO2-eq d-1) in 2016'.format(median_lake_n2o_co2_eq_16))
+print('Mean lake N2O emissions  are {:0.2f} ± {:0.2f}  (kg CO2-eq d-1) in 2016'.format(mean_lake_n2o_co2_eq_16, unc_lake_n2o_co2_eq_16))
+print('Median lake GHG emissions are {:0.2f}  (kg CO2-eq d-1)'.format(median_lake_co2_eq_16))  
+print('Mean lake GHG emissions are {:0.2f} ± {:0.2f} (kg CO2-eq d-1)'.format(mean_lake_co2_eq_16, unc_lake_co2_eq_16))  
+print('Lake GHG emissions range from {:0.2f} to {:0.2f} (kg CO2-eq d-1) [95% CI]'.format(conf_int_lake_co2_eq_16 [0], conf_int_lake_co2_eq_16 [1]))  
 
 # Pond GHG emissions in CO2-eq
-pond_co2_eq_16 = (pond_co2.df_boot['flux co2'] + pond_ch4.df_boot['flux ch4 co2eq'] + pond_n2o.df_boot['flux n2o co2eq'])* pond_area_16 *10**-6
-median_pond_co2_eq_16 = np.median(pond_co2_eq_16)
-
-pond_co2_co2_eq_16 = pond_co2.df_boot['flux co2'] * pond_area_16 *10**-6
+pond_co2_co2_eq_16 = pond_co2.df_boot['flux co2-eq'] * pond_area_16 
+mean_pond_co2_co2_eq_16 = np.mean(pond_co2_co2_eq_16)
 std_pond_co2_co2_eq_16 = np.std(pond_co2_co2_eq_16)
-unc_pond_co2_co2_eq_16 = std_pond_co2_co2_eq_16 + math.sqrt((0.15*np.median(pond_co2_co2_eq_16))**2 + (0.15*(pond_area_16/1000000))**2)
-pond_ch4_co2_eq_16 = pond_ch4.df_boot['flux ch4 co2eq']  * pond_area_16 *10**-6
+unc_pond_co2_co2_eq_16 = mean_pond_co2_co2_eq_16 * math.sqrt((std_pond_co2_co2_eq_16/mean_pond_co2_co2_eq_16)**2 + 0.15**2)
+pond_ch4_co2_eq_16 = pond_ch4.df_boot['flux ch4 co2eq']  * pond_area_16
+mean_pond_ch4_co2_eq_16 = np.mean(pond_ch4_co2_eq_16)
 std_pond_ch4_co2_eq_16 = np.std(pond_ch4_co2_eq_16)
-unc_pond_ch4_co2_eq_16 = std_pond_ch4_co2_eq_16 + math.sqrt((0.15*np.median(pond_ch4_co2_eq_16))**2 + (0.15*(pond_area_16/1000000))**2)
-pond_n2o_co2_eq_16 = pond_n2o.df_boot['flux n2o co2eq']* pond_area_16 *10**-6
+unc_pond_ch4_co2_eq_16 = mean_pond_ch4_co2_eq_16 * math.sqrt((std_pond_ch4_co2_eq_16/mean_pond_ch4_co2_eq_16)**2 + 0.15**2)
+pond_n2o_co2_eq_16 = pond_n2o.df_boot['flux n2o co2eq']* pond_area_16
+mean_pond_n2o_co2_eq_16 = np.mean(pond_n2o_co2_eq_16)
 std_pond_n2o_co2_eq_16 = np.std(pond_n2o_co2_eq_16)
-unc_pond_n2o_co2_eq_16 = std_pond_n2o_co2_eq_16 + math.sqrt((0.15*np.median(pond_n2o_co2_eq_16))**2 + (0.15*(pond_area_16/1000000))**2)
-median_pond_n2o_co2_eq_16 = np.median(pond_n2o.df_boot['flux n2o co2eq']* pond_area_16 *10**-6)
-conf_int_pond_co2_eq_16 = np.percentile(pond_co2_eq_16, [5, 95])
+unc_pond_n2o_co2_eq_16 = mean_pond_n2o_co2_eq_16 * math.sqrt((std_pond_n2o_co2_eq_16/mean_pond_n2o_co2_eq_16)**2 + 0.15**2)
+median_pond_n2o_co2_eq_16 = np.median(pond_n2o_co2_eq_16)
 
+
+pond_co2_eq_16 = pond_co2_co2_eq_16 + pond_ch4_co2_eq_16 + pond_n2o_co2_eq_16
+median_pond_co2_eq_16 = np.median(pond_co2_eq_16)
+mean_pond_co2_eq_16 = np.mean(pond_co2_eq_16)
 std_pond_co2_eq_16 = np.std(pond_co2_eq_16)
 unc_pond_co2_eq_16 = std_pond_co2_eq_16 + math.sqrt((0.15*median_pond_co2_eq_16)**2 + (0.15*(pond_area_16/1000000))**2)
-print('Median pond N2O emissions  are {:0.2f} (kilo CO2-eq mole d-1) in 2016'.format(median_pond_n2o_co2_eq_16))
-print('Median pond GHG emissions  are {:0.2f} ± {:0.2f} (kilo CO2-eq mole d-1)'.format(median_pond_co2_eq_16, unc_pond_co2_eq_16))    
-print('Pond GHG emissions range from {:0.2f} to {:0.2f} (kilo CO2-eq mole d-1) [95% CI]'.format(conf_int_pond_co2_eq_16 [0], conf_int_pond_co2_eq_16 [1]))  
+conf_int_pond_co2_eq_16 = np.percentile(pond_co2_eq_16, [5, 95])
+print('Median pond N2O emissions  are {:0.2f} (kg CO2-eq d-1) in 2016'.format(median_pond_n2o_co2_eq_16))
+print('Mean pond N2O emissions  are {:0.2f} ± {:0.2f}  (kg CO2-eq d-1) in 2016'.format(mean_pond_n2o_co2_eq_16, unc_pond_n2o_co2_eq_16))
+print('Median pond GHG emissions  are {:0.2f} (kg CO2-eq d-1)'.format(median_pond_co2_eq_16))    
+print('Mean pond GHG emissions  are {:0.2f} ± {:0.2f} (kg CO2-eq d-1)'.format(mean_pond_co2_eq_16, unc_pond_co2_eq_16))   
+print('Pond GHG emissions range from {:0.2f} to {:0.2f} (kg CO2-eq d-1) [95% CI]'.format(conf_int_pond_co2_eq_16 [0], conf_int_pond_co2_eq_16 [1]))  
 
 # Fluvial GHG emissions in CO2-eq
-fluvial_co2_eq_16 = (fluvial_co2.df_boot['flux co2'] + fluvial_ch4.df_boot['flux ch4 co2eq'] + fluvial_n2o.df_boot['flux n2o co2eq'])* fluvial_area_16 *10**-6
-median_fluvial_co2_eq_16 = np.median(fluvial_co2_eq_16)
-
-fluvial_co2_co2_eq_16 = fluvial_co2.df_boot['flux co2'] * fluvial_area_16 *10**-6
+fluvial_co2_co2_eq_16 = fluvial_co2.df_boot['flux co2-eq'] * fluvial_area_16
+mean_fluvial_co2_co2_eq_16 = np.mean(fluvial_co2_co2_eq_16)
 std_fluvial_co2_co2_eq_16 = np.std(fluvial_co2_co2_eq_16)
-unc_fluvial_co2_co2_eq_16 = std_fluvial_co2_co2_eq_16 + math.sqrt((0.15*np.median(fluvial_co2_co2_eq_16))**2 + (0.15*(fluvial_area_16/1000000))**2)
-fluvial_ch4_co2_eq_16 = fluvial_ch4.df_boot['flux ch4 co2eq']  * fluvial_area_16 *10**-6
+unc_fluvial_co2_co2_eq_16 = mean_fluvial_co2_co2_eq_16 * math.sqrt((std_fluvial_co2_co2_eq_16 /mean_fluvial_co2_co2_eq_16)**2 + 0.15**2)
+fluvial_ch4_co2_eq_16 = fluvial_ch4.df_boot['flux ch4 co2eq']  * fluvial_area_16 
+mean_fluvial_ch4_co2_eq_16 = np.mean(fluvial_ch4_co2_eq_16)
 std_fluvial_ch4_co2_eq_16 = np.std(fluvial_ch4_co2_eq_16)
-unc_fluvial_ch4_co2_eq_16 = std_fluvial_ch4_co2_eq_16 + math.sqrt((0.15*np.median(fluvial_ch4_co2_eq_16))**2 + (0.15*(fluvial_area_16/1000000))**2)
-fluvial_n2o_co2_eq_16 = fluvial_n2o.df_boot['flux n2o co2eq']* fluvial_area_16 *10**-6
+unc_fluvial_ch4_co2_eq_16 = mean_fluvial_ch4_co2_eq_16 * math.sqrt((std_fluvial_ch4_co2_eq_16 /mean_fluvial_ch4_co2_eq_16)**2 + 0.15**2)
+fluvial_n2o_co2_eq_16 = fluvial_n2o.df_boot['flux n2o co2eq']* fluvial_area_16
+mean_fluvial_n2o_co2_eq_16 = np.mean(fluvial_n2o_co2_eq_16)
 std_fluvial_n2o_co2_eq_16 = np.std(fluvial_n2o_co2_eq_16)
-unc_fluvial_n2o_co2_eq_16 = std_fluvial_n2o_co2_eq_16 + math.sqrt((0.15*np.median(fluvial_n2o_co2_eq_16))**2 + (0.15*(fluvial_area_16/1000000))**2)
-median_fluvial_n2o_co2_eq_16 = np.median(fluvial_n2o.df_boot['flux n2o co2eq']* fluvial_area_16 *10**-6)
-conf_int_fluvial_co2_eq_16 = np.percentile(fluvial_co2_eq_16, [5, 95])
+unc_fluvial_n2o_co2_eq_16 = mean_fluvial_n2o_co2_eq_16 * math.sqrt((std_fluvial_n2o_co2_eq_16/mean_fluvial_n2o_co2_eq_16)**2 + 0.15**2)
+median_fluvial_n2o_co2_eq_16 = np.median(fluvial_n2o_co2_eq_16)
 
+fluvial_co2_eq_16 = fluvial_co2_co2_eq_16 + fluvial_ch4_co2_eq_16 + fluvial_n2o_co2_eq_16
+median_fluvial_co2_eq_16 = np.median(fluvial_co2_eq_16)
+mean_fluvial_co2_eq_16 = np.mean(fluvial_co2_eq_16)
 std_fluvial_co2_eq_16 = np.std(fluvial_co2_eq_16)
-unc_fluvial_co2_eq_16 = std_fluvial_co2_eq_16 + math.sqrt((0.15*median_fluvial_co2_eq_16)**2 + (0.15*(fluvial_area_16/1000000))**2)
-print('Median fluvial N2O emissions  are {:0.2f}  (kilo CO2-eq mole d-1) in 2016'.format(median_fluvial_n2o_co2_eq_16))
-print('Median fluvial GHG emissions  are {:0.2f} ± {:0.2f} (kilo CO2-eq mole d-1)'.format(median_fluvial_co2_eq_16, unc_fluvial_co2_eq_16))    
-print('Fluvial GHG emissions range from {:0.2f} to {:0.2f} (kilo CO2-eq mole d-1) [95% CI]'.format(conf_int_fluvial_co2_eq_16 [0], conf_int_fluvial_co2_eq_16 [1]))  
+conf_int_fluvial_co2_eq_16 = np.percentile(fluvial_co2_eq_16, [5, 95])
+unc_fluvial_co2_eq_16 = mean_fluvial_co2_eq_16 * math.sqrt((std_fluvial_co2_eq_16/mean_fluvial_co2_eq_16)**2 + 0.15**2)
+print('Median fluvial N2O emissions  are {:0.2f}  (kg CO2-eq d-1) in 2016'.format(median_fluvial_n2o_co2_eq_16))
+print('Median fluvial GHG emissions  are {:0.2f} (kg CO2-eq d-1)'.format(median_fluvial_co2_eq_16))  
+print('Mean fluvial GHG emissions  are {:0.2f} ± {:0.2f} (kg CO2-eq d-1)'.format(mean_fluvial_co2_eq_16, unc_fluvial_co2_eq_16))   
+print('Fluvial GHG emissions range from {:0.2f} to {:0.2f} (kg CO2-eq d-1) [95% CI]'.format(conf_int_fluvial_co2_eq_16 [0], conf_int_fluvial_co2_eq_16 [1]))  
 
 # Total inland water GHG emissions in CO2-eq
-co2_eq_16 = (lake_co2.df_boot['flux co2'] * lake_area_16 + pond_co2.df_boot['flux co2'] * pond_area_16 + fluvial_co2.df_boot['flux co2'] * fluvial_area_16) *10**-6
+co2_eq_16 = lake_co2_co2_eq_16 + pond_co2_co2_eq_16 + fluvial_co2_co2_eq_16
 co2_eq_16_median = np.median(co2_eq_16)
+co2_eq_16_mean = np.mean(co2_eq_16)
 co2_eq_16_unc = math.sqrt(unc_lake_co2_co2_eq_16**2 + unc_pond_co2_co2_eq_16**2 + unc_fluvial_co2_co2_eq_16**2)
-ch4_eq_16 = (lake_ch4.df_boot['flux ch4 co2eq'] * lake_area_16 + pond_ch4.df_boot['flux ch4 co2eq'] * pond_area_16 + fluvial_ch4.df_boot['flux ch4 co2eq'] * fluvial_area_16) *10**-6
+ch4_eq_16 = lake_ch4_co2_eq_16 + pond_ch4_co2_eq_16 + fluvial_ch4_co2_eq_16
 ch4_eq_16_median = np.median(ch4_eq_16)
+ch4_eq_16_mean = np.mean(ch4_eq_16)
 ch4_eq_16_unc = math.sqrt(unc_lake_ch4_co2_eq_16**2 + unc_pond_ch4_co2_eq_16**2 + unc_fluvial_ch4_co2_eq_16**2)
-n2o_eq_16 = (lake_n2o.df_boot['flux n2o co2eq'] * lake_area_16 + pond_n2o.df_boot['flux n2o co2eq'] * pond_area_16 + fluvial_n2o.df_boot['flux n2o co2eq'] * fluvial_area_16) *10**-6
+n2o_eq_16 = lake_n2o_co2_eq_16 + pond_n2o_co2_eq_16 + fluvial_n2o_co2_eq_16
 n2o_eq_16_median = np.median(n2o_eq_16)
+n2o_eq_16_mean = np.mean(n2o_eq_16)
 n2o_eq_16_unc = math.sqrt(unc_lake_n2o_co2_eq_16**2 + unc_pond_n2o_co2_eq_16**2 + unc_fluvial_n2o_co2_eq_16**2)
 
-print('Median CO2 inland water GHG emissions are {:0.2f} ± {:0.2f}  (kilo CO2-eq mole d-1) in 2016'.format(co2_eq_16_median, co2_eq_16_unc))
-print('Median CH4 inland water GHG emissions are {:0.2f} ± {:0.2f}  (kilo CO2-eq mole d-1) in 2016'.format(ch4_eq_16_median, ch4_eq_16_unc))
-print('Median N2O inland water GHG emissions are {:0.2f} ± {:0.2f}  (kilo CO2-eq mole d-1) in 2016'.format(n2o_eq_16_median, n2o_eq_16_unc))
+print('Median CO2 inland water GHG emissions are {:0.2f} (kg CO2-eq d-1) in 2016'.format(co2_eq_16_median))
+print('Mean CO2 inland water GHG emissions are {:0.2f} ± {:0.2f} (kg CO2-eq d-1) in 2016'.format(co2_eq_16_mean, co2_eq_16_unc))
+print('Median CH4 inland water GHG emissions are {:0.2f} (kg CO2-eq d-1) in 2016'.format(ch4_eq_16_median))
+print('Medan CH4 inland water GHG emissions are {:0.2f} ± {:0.2f} (kg CO2-eq d-1) in 2016'.format(ch4_eq_16_mean, ch4_eq_16_unc))
+print('Median N2O inland water GHG emissions are {:0.2f} (kg CO2-eq d-1) in 2016'.format(n2o_eq_16_median))
+print('Mean N2O inland water GHG emissions are {:0.2f} ± {:0.2f} (kg CO2-eq d-1) in 2016'.format(n2o_eq_16_mean, n2o_eq_16_unc))
 
 emissions_ghg_16 = co2_eq_16 + ch4_eq_16 + n2o_eq_16
 emissions_ghg_16_median = np.median(emissions_ghg_16)
+emissions_ghg_16_mean = np.mean(emissions_ghg_16)
 conf_int_emissions_ghg_16 = np.percentile(emissions_ghg_16, [5, 95])
 
 unc_emissions_ghg_16 = math.sqrt(unc_pond_co2_eq_16**2 + unc_lake_co2_eq_16**2 + unc_fluvial_co2_eq_16**2)
-unc_emissions_ghg_16_perc = unc_emissions_ghg_16 / emissions_ghg_16_median
+unc_emissions_ghg_16_perc = unc_emissions_ghg_16 / emissions_ghg_16_mean
 
-print('Inland water CO2 emissions accounted for {:2.2%} of the inland water GHG emissions in CO2-equivalents in 2016'.format(co2_eq_16_median / emissions_ghg_16_median))
-print('Inland water CH4 emissions accounted for {:2.2%} of the inland water GHG emissions in CO2-equivalents in 2016'.format(ch4_eq_16_median / emissions_ghg_16_median))
-print('Inland water N2O emissions accounted for {:2.2%} of the inland water GHG emissions in CO2-equivalents in 2016'.format(n2o_eq_16_median / emissions_ghg_16_median))
-print('The uncertainty of the inland water GHG emissions in CO2-equivalents in 2016 is {:2.2%}'.format(unc_emissions_ghg_16_perc))
 
-print('Median inland water GHG emissions (CO2-eq) are {:0.2f} ± {:0.2f} (kilo CO2-eq mole d-1)'.format(emissions_ghg_16_median, unc_emissions_ghg_16))    
+print('Median inland water CO2 emissions accounted for {:2.2%} of the inland water GHG emissions in CO2-equivalents in 2016'.format(co2_eq_16_median / emissions_ghg_16_median))
+print('Mean inland water CO2 emissions accounted for {:2.2%} of the inland water GHG emissions in CO2-equivalents in 2016'.format(co2_eq_16_mean / emissions_ghg_16_mean))
+print('Median inland water CH4 emissions accounted for {:2.2%} of the inland water GHG emissions in CO2-equivalents in 2016'.format(ch4_eq_16_mean / emissions_ghg_16_mean))
+print('Mean inland water CH4 emissions accounted for {:2.2%} of the inland water GHG emissions in CO2-equivalents in 2016'.format(ch4_eq_16_median / emissions_ghg_16_median))
+print('Median inland water N2O emissions accounted for {:2.2%} of the inland water GHG emissions in CO2-equivalents in 2016'.format(n2o_eq_16_median / emissions_ghg_16_median))
+print('Mean inland water N2O emissions accounted for {:2.2%} of the inland water GHG emissions in CO2-equivalents in 2016'.format(n2o_eq_16_mean / emissions_ghg_16_mean))
+print('The (mean) uncertainty of the inland water GHG emissions in CO2-equivalents in 2016 is {:2.2%}'.format(unc_emissions_ghg_16_perc))
+
+print('Median inland water GHG emissions (CO2-eq) are {:0.2f} (kg CO2-eq d-1)'.format(emissions_ghg_16_median))    
+print('Mean inland water GHG emissions (CO2-eq) are {:0.2f} ± {:0.2f} (kg CO2-eq d-1)'.format(emissions_ghg_16_mean, unc_emissions_ghg_16)) 
 
 # Read in tundra GHG emissions --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Read in tundra CH4 emssions 
-fname = r'C:\Users\mmo990\surfdrive\Paper1\Data\FLX_RU-Cok_FLUXNET-CH4_HH_2008-2016_1-1.csv'
+fname = r'...\FLX_RU-Cok_FLUXNET-CH4_HH_2008-2016_1-1.csv'
 startdate_16 = '2016-07-30'
 enddate_16 = '2016-08-10'
 
 # Tundra CH4 Fluxes in CO2-eq
 t_ch4_eq = tundra_flux('CH4')
 t_ch4_f_eq = t_ch4_eq.readin_fluxes_tch4(fname, startdate_16, enddate_16, 'GWP')
-# Convert from mmol CO2-eq m-2 d-1 to kilo mol CO2-eq m-2 d-1
-t_ch4_boot_eq = t_ch4_eq.bootstrapping(1000) *10**-6
+t_ch4_boot_eq = t_ch4_eq.bootstrapping(1000)
+
 
 # Tundra CH4 Fluxes in mg CH4-C m-2 d-1
 t_ch4_c = tundra_flux('CH4')
@@ -384,15 +432,15 @@ t_ch4_boot_c = t_ch4_boot_c * 10**-9
 
 
 # Read in tundra CO2 emssions 
-fname = r'C:\Users\mmo990\surfdrive\Paper1\Data\EC_Tower_CO2.csv'
+fname = r'...\EC_Tower_CO2.csv'
 startdate_16 = '2016-07-30'
 enddate_16 = '2016-08-10'
 
 # Tundra CO2 Fluxes in CO2-eq
 t_co2_eq = tundra_flux('CO2')
 t_co2_f_eq = t_co2_eq.readin_fluxes_tco2(fname, startdate_16, enddate_16, 'GWP')
-# Convert from mmol CO2 m-2 d-1 to kilo mol CO2 m-2 d-1
-t_co2_boot_eq = t_co2_eq.bootstrapping(1000) *10**-6
+t_co2_boot_eq = t_co2_eq.bootstrapping(1000)
+
 
 # Tundra CO2 Fluxes in mg CO2-C m-2 d-1
 t_co2_c = tundra_flux('CO2')
@@ -405,105 +453,127 @@ t_co2_boot_c = t_co2_boot_c * 10**-9
 
 
 # Tundra N2O flux
-fname = r'C:\Users\mmo990\surfdrive\Paper1\Data\n2o_tundra_fluxes.xlsx'
+fname = r'...\n2o_tundra_fluxes.xlsx'
 
 t_n2o = tundra_flux('N2O')
 t_n2o.readin_fluxes_tn2o(fname)
 t_n2o_boot = t_n2o.bootstrapping(1000)
-# Convert from mmol CO2-eq m-2 d-1 to kilo mol CO2-eq m-2 d-1
-t_n2o_boot = t_n2o_boot * 10**-6
 
-# Total tundra emissions in CO2-eq in kilo mol CO2-eq d-1
+
+# Total tundra emissions in CO2-eq in kg CO2-eq d-1
 t_co2eq = (t_co2_boot_eq + t_ch4_boot_eq + t_n2o_boot) * tundra_area_16
 t_co2eq_median = np.median(t_co2eq)
+t_co2eq_mean = np.mean(t_co2eq)
 std_landscape_tundra_co2eq_16 = np.std(t_co2eq)
-unc_tundra_co2eq_16 = std_landscape_tundra_co2eq_16 + math.sqrt((0.15*t_co2eq_median)**2 + (0.15*(tundra_area_16/1000000))**2)
-print('Median tundra GHG emissions are {:0.2f} ± {:0.2f} (kilo CO2-eq d-1)'.format(t_co2eq_median, unc_tundra_co2eq_16))
+unc_tundra_co2eq_16 = t_co2eq_mean * math.sqrt((std_landscape_tundra_co2eq_16/t_co2eq_mean)**2 + 0.15**2)
+print('Median tundra GHG emissions are {:0.2f} (kg CO2-eq d-1)'.format(t_co2eq_median))
+print('Mean tundra GHG emissions are {:0.2f} ± {:0.2f} (kg CO2-eq d-1)'.format(t_co2eq_mean, unc_tundra_co2eq_16))
 
 # C (CO2-C + CH4-C) landscape exchange mg C m-2 d-1---------------------------------------------------------------------------------------------------------------------------------------------------------
 tundra_c_ch4_16 = t_ch4_boot_c * tundra_area_16
 tundra_c_ch4_16_median = np.median(tundra_c_ch4_16)
+tundra_c_ch4_16_mean = np.mean(tundra_c_ch4_16)
 tundra_c_ch4_16_std = np.std(tundra_c_ch4_16)
-tundra_c_ch4_16_unc = tundra_c_ch4_16_std + math.sqrt((0.15*tundra_c_ch4_16_median)**2 + (0.15*(tundra_area_16/1000000))**2)
-print('Median tundra CH4-C emissions are {:0.2f} ± {:0.2f} (Mg C d-1)'.format(tundra_c_ch4_16_median, tundra_c_ch4_16_unc))
+tundra_c_ch4_16_unc = tundra_c_ch4_16_mean * math.sqrt((tundra_c_ch4_16_std/tundra_c_ch4_16_mean)**2 + 0.15**2)
+print('Median tundra CH4-C emissions are {:0.2f} (Mg C d-1)'.format(tundra_c_ch4_16_median))
+print('Mean tundra CH4-C emissions are {:0.2f} ± {:0.2f} (Mg C d-1)'.format(tundra_c_ch4_16_mean, tundra_c_ch4_16_unc))
+
 tundra_c_co2_16 = t_co2_boot_c * tundra_area_16
 tundra_c_co2_16_median = np.median(tundra_c_co2_16)
+tundra_c_co2_16_mean = np.mean(tundra_c_co2_16)
 tundra_c_co2_16_std = np.std(tundra_c_co2_16)
-tundra_c_co2_16_unc = tundra_c_co2_16_std + math.sqrt((0.15*tundra_c_co2_16_median)**2 + (0.15*(tundra_area_16/1000000))**2)
-print('Median tundra CO2-C emissions are {:0.2f} ± {:0.2f} (Mg C d-1)'.format(tundra_c_co2_16_median, tundra_c_co2_16_unc))
+tundra_c_co2_16_unc = tundra_c_co2_16_mean * math.sqrt((tundra_c_co2_16_std/tundra_c_co2_16_mean)**2 + 0.15**2)
+print('Median tundra CO2-C emissions are {:0.2f} (Mg C d-1)'.format(tundra_c_co2_16_median))
+print('Mean tundra CO2-C emissions are {:0.2f} ± {:0.2f} (Mg C d-1)'.format(tundra_c_co2_16_mean, tundra_c_co2_16_unc))
 
 tundra_c_16 = tundra_c_ch4_16 + tundra_c_co2_16
 tundra_c_16_median = np.median(tundra_c_ch4_16 + tundra_c_co2_16)
+tundra_c_16_mean = np.mean(tundra_c_ch4_16 + tundra_c_co2_16)
 std_landscape_tundra_c_16 = np.std(tundra_c_16)
-unc_tundra_c_16 = std_landscape_tundra_c_16 + math.sqrt((0.15*np.median(tundra_c_16))**2 + (0.15*(tundra_area_16/1000000))**2)
+unc_tundra_c_16 = tundra_c_16_mean * math.sqrt((std_landscape_tundra_c_16/tundra_c_16_mean)**2 + 0.15**2)
+print('Median tundra C (CO2-C + CH4-C) emissions are {:0.2f} (Mg C d-1)'.format(tundra_c_16_median))
+print('Mean tundra C (CO2-C + CH4-C) emissions are {:0.2f} ± {:0.2f} (Mg C d-1)'.format(tundra_c_16_mean, unc_tundra_c_16))
 
 landscape_c_exchange_16 = emissions_c_16 + tundra_c_16
 landscape_c_exchange_16_median = np.median(landscape_c_exchange_16)
+landscape_c_exchange_16_mean = np.mean(landscape_c_exchange_16)
 conf_int_landscape_c_exchange_16 = np.percentile(landscape_c_exchange_16, [5, 95])
 unc_landscape_c_exchange_16 = math.sqrt(unc_pond_c_16**2 + unc_lake_c_16**2 + unc_fluvial_c_16**2 + unc_tundra_c_16**2)
-unc_landscape_c_exchange_16_perc = unc_landscape_c_exchange_16/landscape_c_exchange_16_median
+unc_landscape_c_exchange_16_perc = unc_landscape_c_exchange_16/landscape_c_exchange_16_mean
 
-print('Median landscape C exchange (CO2-C + CH4-C) is {:0.2f} ± {:0.2f} (Mg C d-1)'.format(landscape_c_exchange_16_median, unc_landscape_c_exchange_16))    
-print('Median landscape C exchange (CO2-C + CH4-C) range from {:0.2f} to {:0.2f} (Mg C d-1) [95% CI]'.format(conf_int_landscape_c_exchange_16[0], conf_int_landscape_c_exchange_16[1]))
+print('Median landscape C exchange (CO2-C + CH4-C) is {:0.2f} (Mg C d-1)'.format(landscape_c_exchange_16_median))    
+print('Mean landscape C exchange (CO2-C + CH4-C) is {:0.2f} ± {:0.2f} (Mg C d-1)'.format(landscape_c_exchange_16_mean, unc_landscape_c_exchange_16)) 
+print('Landscape C exchange (CO2-C + CH4-C) range from {:0.2f} to {:0.2f} (Mg C d-1) [95% CI]'.format(conf_int_landscape_c_exchange_16[0], conf_int_landscape_c_exchange_16[1]))
 print('The uncertainty of landscape C exchange in 2016 is {:2.2%}'.format(unc_landscape_c_exchange_16_perc))
 
 
-print('Inland water lake emissions accounted for {:2.2%} of the landscape CO2-C + CH4-C exchange in 2016'.format(median_lake_c_16/landscape_c_exchange_16_median))
-print('Inland water pond emissions accounted for {:2.2%} of the landscape CO2-C + CH4-C exchange in 2016'.format(median_pond_c_16/landscape_c_exchange_16_median))
-print('Inland water fluvial emissions accounted for {:2.2%} of the landscape CO2-C + CH4-C exchange in 2016'.format(median_fluvial_c_16/landscape_c_exchange_16_median))
+print('Inland water lake emissions accounted for {:2.2%} of the landscape CO2-C + CH4-C exchange in 2016'.format(mean_lake_c_16/landscape_c_exchange_16_mean))
+print('Inland water pond emissions accounted for {:2.2%} of the landscape CO2-C + CH4-C exchange in 2016'.format(mean_pond_c_16/landscape_c_exchange_16_mean))
+print('Inland water fluvial emissions accounted for {:2.2%} of the landscape CO2-C + CH4-C exchange in 2016'.format(mean_fluvial_c_16/landscape_c_exchange_16_mean))
 
 
 print('Inland water C emissions offset the landscape C sink by {:2.2%} in 2016'\
-      .format((tundra_c_16_median - (tundra_c_16_median + median_emissions_c_16)) / tundra_c_16_median))
+      .format((tundra_c_16_mean - (tundra_c_16_mean + mean_emissions_c_16)) / tundra_c_16_mean))
 
 
 # CO2 + CH4 + N20 landscape exchange CO2-eq ------------------------------------------------------------------------------------------------------------
 tundra_co2_co2eq_16 = t_co2_boot_eq * tundra_area_16
 median_tundra_co2_co2eq_16 = np.median(tundra_co2_co2eq_16)
+mean_tundra_co2_co2eq_16 = np.mean(tundra_co2_co2eq_16)
 std_tundra_co2_co2eq_16 = np.std(tundra_co2_co2eq_16)
-unc_tundra_co2_co2eq_16 = std_tundra_co2_co2eq_16 + math.sqrt((0.15*median_tundra_co2_co2eq_16)**2 + (0.15*(tundra_area_16/1000000))**2)
+unc_tundra_co2_co2eq_16 = mean_tundra_co2_co2eq_16 * math.sqrt((std_tundra_co2_co2eq_16/mean_tundra_co2_co2eq_16)**2 + 0.15**2)
 
 tundra_ch4_co2eq_16 = t_ch4_boot_eq * tundra_area_16
 median_tundra_ch4_co2eq_16 = np.median(tundra_ch4_co2eq_16)
+mean_tundra_ch4_co2eq_16 = np.mean(tundra_ch4_co2eq_16)
 std_tundra_ch4_co2eq_16 = np.std(tundra_ch4_co2eq_16)
-unc_tundra_ch4_co2eq_16 = std_tundra_ch4_co2eq_16 + math.sqrt((0.15*median_tundra_ch4_co2eq_16)**2 + (0.15*(tundra_area_16/1000000))**2)
+unc_tundra_ch4_co2eq_16 = mean_tundra_ch4_co2eq_16 * math.sqrt((std_tundra_ch4_co2eq_16/mean_tundra_ch4_co2eq_16)**2 + 0.15**2)
 
 tundra_n2o_co2eq_16 = t_n2o_boot * tundra_area_16
 median_tundra_n2o_co2eq_16 = np.median(tundra_n2o_co2eq_16)
+mean_tundra_n2o_co2eq_16 = np.mean(tundra_n2o_co2eq_16)
 std_tundra_n2o_co2eq_16 = np.std(tundra_n2o_co2eq_16)
-unc_tundra_n2o_co2eq_16 = std_tundra_n2o_co2eq_16 + math.sqrt((0.15*median_tundra_n2o_co2eq_16)**2 + (0.15*(tundra_area_16/1000000))**2)
+unc_tundra_n2o_co2eq_16 = mean_tundra_n2o_co2eq_16 * math.sqrt((std_tundra_n2o_co2eq_16/mean_tundra_n2o_co2eq_16)**2 + 0.15**2)
 
 
 landscape_co2eq_exchange_16 = emissions_ghg_16 + t_co2eq
 landscape_co2eq_exchange_16_median = np.median(landscape_co2eq_exchange_16)
+landscape_co2eq_exchange_16_mean = np.mean(landscape_co2eq_exchange_16)
 conf_int_landscape_co2eq_exchange_16 = np.percentile(landscape_co2eq_exchange_16, [5, 95])
 unc_landscape_co2eq_exchange_16 = math.sqrt(unc_pond_co2_eq_16**2 + unc_lake_co2_eq_16**2 + unc_fluvial_co2_eq_16**2 + unc_tundra_co2eq_16**2)
 
-print('Median tundra CO2 GHG exchange in 2016 is {:0.2f} (kilo mole CO2-eq d-1)'.format(median_tundra_co2_co2eq_16))   
-print('Median tundra CH4 GHG exchange in 2016 is {:0.2f} (kilo mole CO2-eq d-1)'.format(median_tundra_ch4_co2eq_16))     
-print('Median tundra N2O GHG exchange in 2016 is {:0.2f} (kilo mole CO2-eq d-1)'.format(median_tundra_n2o_co2eq_16))
+print('Median tundra CO2 GHG exchange in 2016 is {:0.2f} (kg CO2-eq d-1)'.format(median_tundra_co2_co2eq_16))   
+print('Mean tundra CO2 GHG exchange in 2016 is {:0.2f} ± {:0.2f} (kg CO2-eq d-1)'.format(mean_tundra_co2_co2eq_16, unc_tundra_co2_co2eq_16))   
+print('Median tundra CH4 GHG exchange in 2016 is {:0.2f} (kg CO2-eq d-1)'.format(median_tundra_ch4_co2eq_16))     
+print('Mean tundra CH4 GHG exchange in 2016 is {:0.2f} ± {:0.2f} (kg CO2-eq d-1)'.format(mean_tundra_ch4_co2eq_16, unc_tundra_ch4_co2eq_16)) 
+print('Median tundra N2O GHG exchange in 2016 is {:0.2f} (kg CO2-eq d-1)'.format(median_tundra_n2o_co2eq_16))
+print('Mean tundra N2O GHG exchange in 2016 is {:0.2f} ± {:0.2f} (kg CO2-eq d-1)'.format(mean_tundra_n2o_co2eq_16, unc_tundra_n2o_co2eq_16))
+print('Mean tundra GHG exchange in 2016 is {:0.2f} ± {:0.2f} (kg CO2-eq d-1)'.format(mean_tundra_n2o_co2eq_16, unc_tundra_n2o_co2eq_16))
 
-print('Median landscape GHG exchange in 2016 is {:0.2f} ± {:0.2f} (kilo mole CO2-eq d-1)'.format(landscape_co2eq_exchange_16_median, unc_landscape_co2eq_exchange_16))    
-print('Median landscape GHG exchange in 2016 range from {:0.2f} to {:0.2f} (kilo mole CO2-eq d-1) [95% CI]'.format(conf_int_landscape_co2eq_exchange_16[0], conf_int_landscape_co2eq_exchange_16[1]))
+
+
+print('Median landscape GHG exchange in 2016 is {:0.2f} (kg CO2-eq d-1)'.format(landscape_co2eq_exchange_16_median))    
+print('Mean landscape GHG exchange in 2016 is {:0.2f} ± {:0.2f} (kg CO2-eq d-1)'.format(landscape_co2eq_exchange_16_mean, unc_landscape_co2eq_exchange_16))  
+print('Median landscape GHG exchange in 2016 range from {:0.2f} to {:0.2f} (kg CO2-eq d-1) [95% CI]'.format(conf_int_landscape_co2eq_exchange_16[0], conf_int_landscape_co2eq_exchange_16[1]))
 
 print('Tundra CH4 emissions offset tundra CO2 sink in terms of CO2 equivalent by {:2.2f}'\
-      .format((median_tundra_co2_co2eq_16 - (median_tundra_co2_co2eq_16 + median_tundra_ch4_co2eq_16 )) / median_tundra_co2_co2eq_16))
+      .format((mean_tundra_co2_co2eq_16 - (mean_tundra_co2_co2eq_16 + mean_tundra_ch4_co2eq_16 )) / mean_tundra_co2_co2eq_16))
 print('Tundra CH4 emissions offset tundra CO2 sink in terms of CO2 equivalent by {:2.2%}'\
-      .format((median_tundra_co2_co2eq_16 - (median_tundra_co2_co2eq_16 + median_tundra_ch4_co2eq_16 )) / median_tundra_co2_co2eq_16))
+      .format((mean_tundra_co2_co2eq_16 - (mean_tundra_co2_co2eq_16 + mean_tundra_ch4_co2eq_16 )) / mean_tundra_co2_co2eq_16))
 
-print('Inland water emissions accounted for {:2.2%} of the landscape GHG exchange in 2016'.format(emissions_ghg_16_median/landscape_co2eq_exchange_16_median))
+print('Inland water emissions accounted for {:2.2%} of the landscape GHG exchange in 2016'.format(emissions_ghg_16_mean/landscape_co2eq_exchange_16_mean))
 
-print('Inland water lake emissions accounted for {:2.2%} of the landscape GHG exchange in 2016'.format(median_lake_co2_eq_16/landscape_co2eq_exchange_16_median))
-print('Inland water pond emissions accounted for {:2.2%} of the landscape GHG exchange in 2016'.format(median_pond_co2_eq_16/landscape_co2eq_exchange_16_median))
-print('Inland water fluvial emissions accounted for {:2.2%} of the landscape GHG exchange in 2016'.format(median_fluvial_co2_eq_16/landscape_co2eq_exchange_16_median))
+print('Inland water lake emissions accounted for {:2.2%} of the landscape GHG exchange in 2016'.format(mean_lake_co2_eq_16/landscape_co2eq_exchange_16_mean))
+print('Inland water pond emissions accounted for {:2.2%} of the landscape GHG exchange in 2016'.format(mean_pond_co2_eq_16/landscape_co2eq_exchange_16_mean))
+print('Inland water fluvial emissions accounted for {:2.2%} of the landscape GHG exchange in 2016'.format(mean_fluvial_co2_eq_16/landscape_co2eq_exchange_16_mean))
 
-print('Inland water CO2 emissions accounted for {:2.2%} of the landscape GHG exchange in CO2-equivalents in 2016'.format(co2_eq_16_median/landscape_co2eq_exchange_16_median))
-print('Inland water CH4 emissions accounted for {:2.2%} of the landscape GHG exchange in CO2-equivalents in 2016'.format(ch4_eq_16_median/landscape_co2eq_exchange_16_median))
-print('Inland water N2O emissions accounted for {:2.2%} of the landscape GHG exchange in CO2-equivalents in 2016'.format(n2o_eq_16_median/landscape_co2eq_exchange_16_median))
+print('Inland water CO2 emissions accounted for {:2.2%} of the landscape GHG exchange in CO2-equivalents in 2016'.format(co2_eq_16_mean/landscape_co2eq_exchange_16_mean))
+print('Inland water CH4 emissions accounted for {:2.2%} of the landscape GHG exchange in CO2-equivalents in 2016'.format(ch4_eq_16_mean/landscape_co2eq_exchange_16_mean))
+print('Inland water N2O emissions accounted for {:2.2%} of the landscape GHG exchange in CO2-equivalents in 2016'.format(n2o_eq_16_mean/landscape_co2eq_exchange_16_mean))
 
-print('CO2 emissions accounted for {:2.2%} of the landscape GHG exchange in CO2-equivalents in 2016'.format((median_tundra_co2_co2eq_16 + co2_eq_16_median) / landscape_co2eq_exchange_16_median))
-print('CH4 emissions accounted for {:2.2%} of the landscape GHG exchange in CO2-equivalents in 2016'.format((median_tundra_ch4_co2eq_16 + ch4_eq_16_median) / landscape_co2eq_exchange_16_median))
-print('N2O emissions accounted for {:2.2%} of the landscape GHG exchange in CO2-equivalents in 2016'.format((median_tundra_n2o_co2eq_16 + n2o_eq_16_median) /landscape_co2eq_exchange_16_median))
+print('CO2 emissions accounted for {:2.2%} of the landscape GHG exchange in CO2-equivalents in 2016'.format((mean_tundra_co2_co2eq_16 + co2_eq_16_mean) / landscape_co2eq_exchange_16_mean))
+print('CH4 emissions accounted for {:2.2%} of the landscape GHG exchange in CO2-equivalents in 2016'.format((mean_tundra_ch4_co2eq_16 + ch4_eq_16_mean) / landscape_co2eq_exchange_16_mean))
+print('N2O emissions accounted for {:2.2%} of the landscape GHG exchange in CO2-equivalents in 2016'.format((mean_tundra_n2o_co2eq_16 + n2o_eq_16_mean) /landscape_co2eq_exchange_16_mean))
 
 
 # Plots ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -511,12 +581,11 @@ print('N2O emissions accounted for {:2.2%} of the landscape GHG exchange in CO2-
 barWidth = 0.3
 
 wbs = [ 'Tundra','Inland waters']
-co2 = [ median_tundra_co2_co2eq_16, co2_eq_16_median]
-ch4 = [ median_tundra_ch4_co2eq_16, ch4_eq_16_median]
-n2o= [ median_tundra_n2o_co2eq_16, n2o_eq_16_median]
+co2 = [ mean_tundra_co2_co2eq_16, co2_eq_16_mean]
+ch4 = [ mean_tundra_ch4_co2eq_16, ch4_eq_16_mean]
+n2o= [ mean_tundra_n2o_co2eq_16, n2o_eq_16_mean]
 
-
-error_CO2 = [(unc_tundra_co2_co2eq_16,0), (0, co2_eq_16_unc)] 
+error_CO2 = [(-unc_tundra_co2_co2eq_16,0), (0, co2_eq_16_unc)] 
 error_CH4 = [(0,0), (unc_tundra_ch4_co2eq_16, ch4_eq_16_unc)] 
 error_N2O = [(0,0), (unc_tundra_n2o_co2eq_16, n2o_eq_16_unc)] 
 
@@ -524,18 +593,23 @@ error_N2O = [(0,0), (unc_tundra_n2o_co2eq_16, n2o_eq_16_unc)]
 r1 = np.arange(len(co2))
 r2 = [x + barWidth for x in r1]
 r3 = [x + barWidth for x in r2]
+
+plt.rc('text', usetex=True)
+
  
 # Make the plot
-fig, ax = plt.subplots(figsize=(7,8))
+fig, ax = plt.subplots(figsize=(3.54,4), dpi=300)
 
-plt.bar(r1, co2, color='#ad936b', width=barWidth, edgecolor='black', label='CO2', yerr=error_CO2, capsize=3)
-plt.bar(r2, ch4, color='#935b73', width=barWidth, edgecolor='black', label='CH4', yerr=error_CH4, capsize=3)
-plt.bar(r3, n2o, color='#859f62', width=barWidth, edgecolor='black', label='N2O', yerr=error_N2O, capsize=3)
+plt.bar(r1, co2, color='#ad936b', width=barWidth, edgecolor='black', label=r'$\mathrm{CO_{2}}$', yerr=error_CO2, capsize=3)
+plt.bar(r2, ch4, color='#935b73', width=barWidth, edgecolor='black', label=r'$\mathrm{CH_{4}}$', yerr=error_CH4, capsize=3)
+plt.bar(r3, n2o, color='#859f62', width=barWidth, edgecolor='black', label=r'$\mathrm{N_{2}O}$', yerr=error_N2O, capsize=3)
 
- 
+# Set the font family to serif
+matplotlib.rcParams['font.family'] = 'serif'
+matplotlib.rcParams['font.size'] = 12
 # Add xticks on the middle of the group bars
-plt.ylabel('$\\bf{up-scaled \ GHG \ emissions}$' + '\n' + '$\ (kilo \ mole \ CO_2-equivalent \ d^{-1})$', fontsize = 14) 
-plt.xticks([r + barWidth*0.5 for r in range(len(co2))], ['Tundra', 'Inland waters'])
+plt.ylabel('Up-scaled GHG emissions' + '\n' + r'(kg $\mathrm{CO_{2}}$-eq $\mathrm{d^{-1}}$)', fontsize = 14) 
+plt.xticks([r + barWidth*0.5 for r in range(len(co2))], ['Tundra', 'Inland waters'], fontsize = 12)
 #plt.yscale('log')
 color_name = "black"
 ax.spines["top"].set_color(color_name)
@@ -544,25 +618,28 @@ ax.spines["left"].set_color(color_name)
 ax.spines["right"].set_color(color_name)
 ax.patch.set_facecolor('white')
 
-#locmaj = matplotlib.ticker.LogLocator(base=10,numticks=6) 
-#ax.yaxis.set_major_locator(locmaj)
-#locmin = matplotlib.ticker.LogLocator(base=10.0,subs=(0.2,0.4,0.6,0.8),numticks=6)
-#ax.yaxis.set_minor_locator(locmin)
+ax.tick_params(axis='y', labelsize=12)
 ax.yaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
-ax.yaxis.set_major_formatter(ScalarFormatter())
+plt.ticklabel_format(axis="y", style="sci", scilimits=(0,5), useMathText=True)
+ax.yaxis.get_offset_text().set_fontsize(12)
 
 # Create legend & Show graphic
-plt.legend(loc='best', bbox_to_anchor=(0.5, 0.5, 0.5, 0.5), facecolor='white')
+plt.legend(bbox_to_anchor=(0.11, 0.985, 0.89, 0.2), loc="lower left", mode="expand", borderaxespad=0, ncol=3, facecolor='white', fontsize = 12, handletextpad=0.2, frameon=False)
+
+# Save graphic
+plt.savefig('.../upscaled_ghg_2016_2.png', bbox_inches='tight')
+
 plt.show()
 
-  
-# Plot results
+
+
+
+# Plot C emissions per inland water system
 barWidth = 0.4
 
 wbs = [ 'Pond','Lake', 'Fluvial']
-co2 = [ np.mean(pond_co2_16), np.mean(lake_co2_16), np.mean(fluvial_co2_16)]
-ch4 = [ np.mean(pond_ch4_16), np.mean(lake_ch4_16), np.mean(fluvial_ch4_16)]
-
+co2 = [ mean_pond_co2_16, mean_lake_co2_16, mean_fluvial_co2_16]
+ch4 = [ mean_pond_ch4_16, mean_lake_ch4_16, mean_fluvial_ch4_16]
 
 error_CO2 = [(0,0,0), (unc_pond_co2_16, unc_lake_co2_16, unc_fluvial_co2_16)] 
 error_CH4 = [(0,0,0), (unc_pond_ch4_16, unc_lake_ch4_16, unc_fluvial_ch4_16)] 
@@ -572,16 +649,16 @@ r1 = np.arange(len(co2))
 r2 = [x + barWidth for x in r1]
  
 # Make the plot
-fig, ax = plt.subplots(figsize=(7,8))
-#kwargs_co2 = {"hatch":'/'} 
-#kwargs_ch4 = {"hatch":'.'} 
+fig, ax = plt.subplots(figsize=(3.54,4), dpi=300)
+
 plt.bar(r1, co2, color='#ad936b', width=barWidth, edgecolor='black', label='CO2', yerr=error_CO2, capsize=3)
 plt.bar(r2, ch4, color='#935b73', width=barWidth, edgecolor='black', label='CH4', yerr=error_CH4, capsize=3)
 
  
 # Add xticks on the middle of the group bars
-plt.ylabel('$\\bf{up-scaled \ C \ emissions\ (Mg\ C\ d^{-1})}$', fontsize = 14) 
-plt.xticks([r + barWidth*0.5 for r in range(len(co2))], ['Pond \n (10%)', 'Lake \n (5%)' , 'Fluvial \n (2%)'])
+matplotlib.rcParams['font.family'] = 'serif'
+plt.ylabel('Up-scaled C emissions' + '\n' + r'(Mg\ C\ $\mathrm{d^{-1}}$)', fontsize = 14)
+plt.xticks([r + barWidth*0.5 for r in range(len(co2))], [r'Pond \\ $\mathrm{\phantom{())} (10\%)}$', r'Lake \\ $\mathrm{\phantom{())} (5\%)}$', r'Fluvial \\ $\mathrm{\phantom{())} (2\%)}$'], fontsize = 12)
 plt.yscale('log')
 color_name = "black"
 ax.spines["top"].set_color(color_name)
@@ -592,15 +669,21 @@ ax.patch.set_facecolor('white')
 
 locmaj = matplotlib.ticker.LogLocator(base=10,numticks=6) 
 ax.yaxis.set_major_locator(locmaj)
-locmin = matplotlib.ticker.LogLocator(base=10.0,subs=(0.2,0.4,0.6,0.8),numticks=6)
+locmin = matplotlib.ticker.LogLocator(base=10.0,subs=np.arange(1, 10) * 0.1)
 ax.yaxis.set_minor_locator(locmin)
 ax.yaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
 ax.yaxis.set_major_formatter(ScalarFormatter())
 plt.ylim([-10, 10])
+ax.tick_params(axis='y', labelsize=12)
 
+# Create legend
+# Create legend
+plt.legend(bbox_to_anchor=(0, 0.985), loc="lower left", borderaxespad=0, ncol=2, facecolor='white', fontsize=12, handletextpad=0.2, frameon=False, columnspacing=0.5)
 
-# Create legend & Show graphic
-plt.legend(loc='best', bbox_to_anchor=(0.5, 0.5, 0.5, 0.5), facecolor='white')
+# Save graphic
+plt.savefig('.../upscaled_c_2016_2.png', bbox_inches='tight')
+
+# Show graphic
 plt.show()
 
         

@@ -1,16 +1,14 @@
 # -*- coding: utf-8 -*-
 """
-The following code is part of the manuscript: 
-Written by M. Martyn Rosco
+Created on Tue Apr 25 15:49:14 2023
 
-Functions for bootstrapping are from or based on Statistical Thinking in Python (Part 2) from https://www.datacamp.com
+@author: mmo990
 """
-
 import pandas as pd
 import numpy as np
 import math
 import matplotlib.pyplot as plt
- 
+
 
 
 class Fluxes:
@@ -30,7 +28,7 @@ class Fluxes:
         """
         outlier_removal removes outliers based on the 1.5IQR rule. 
 
-        :param ll: lower limit of IQR
+        :param ll: lowerl limit of IQR
         :param ul: upper limit of IQR   
         :param fpath_outliers: filepath and name where csv file of removed outliers is saved
         :return: dataframe without outliers based on 1.5IQR
@@ -46,20 +44,28 @@ class Fluxes:
         df_outliers.to_csv(fpath_outliers)
         self.df = df_out_removed
 
-    def CO2_conc(self):  
-        """ Converts dissolved CO2 concentration from ppm to micromol/L """ 
-
-        self.df['diss co2'] = self.df['diss CO2.ppm'] * (np.exp(-58.0931+90.5069*(100/self.df['T - K'])+22.294*np.log(self.df['T - K']/100)+self.df['Salinity']*(0.027766-0.025888*(self.df['T - K']/100)+0.0050578*np.square(self.df['T - K']/100))))      
+    def CO2_conc(self):
+        # Convert from ppmv in air at equilibrium with dissolved concentrations  to micromol/L 
+       
+     
+        # Convert from ppm in solution to micromol/L
+        self.df['diss co2'] = self.df['diss CO2.ppm'] * (np.exp(-58.0931+90.5069*(100/self.df['T - K'])+22.294*np.log(self.df['T - K']/100)+self.df['Salinity']*(0.027766-0.025888*(self.df['T - K']/100)+0.0050578*np.square(self.df['T - K']/100))))
+        
         return self.df
     
     def CO2_eq(self):
-        """ Calculates equivalent CO2 dissolved concentration of atmospheric values using Weiss, 1974 formula """       
-        
+        """
+        Calculating equivalent CO2 dissolved concentration of atmospheric values using Weiss, 1974 formula 
+
+        """         
         self.df['CO2 eq'] = self.df['CO2 air']*(np.exp(-58.0931+90.5069*(100/self.df['T - K'])+22.294*np.log(self.df['T - K']/100)+self.df['Salinity']*(0.027766-0.025888*(self.df['T - K']/100)+0.0050578*np.square(self.df['T - K']/100))))
         return self.df
         
     def CH4_eq(self):
-        """ Calculates equivalent CH4 dissolved concentration of atmospheric values using Wiesenburg & Guinasso Jr, 1979 """         
+        """
+        Calculating equivalent CH4 dissolved concentration of atmospheric values using Wiesenburg & Guinasso Jr, 1979 
+
+        """         
         A1 = -415.2807
         A2 = 596.8104
         A3 = 379.2599
@@ -70,8 +76,10 @@ class Fluxes:
         self.df['CH4 eq'] = np.exp(np.log(self.df['CH4 air']*0.000001) + A1 + A2*(100/self.df['T - K']) + A3*np.log(self.df['T - K']/100) + A4*(self.df['T - K']/100) + self.df['Salinity']*(B1 + B2*(self.df['T - K']/100) + B3*(np.square(self.df['T - K']/100))))*0.001
 
     def N2O_eq(self):
-        """  Calculates equivalent N2O dissolved concentration of atmospheric values using Weiss & Price, 1980 """   
-        
+        """
+        Calculating equivalent N2O dissolved concentration of atmospheric values using Weiss & Price, 1980 
+
+        """         
         A1 = -165.8806
         A2 = 222.8743
         A3 = 92.0792
@@ -82,7 +90,10 @@ class Fluxes:
         self.df['N2O eq'] = self.df['N2O air']*np.exp(A1 + A2*(100/self.df['T - K']) + A3*np.log(self.df['T - K']/100) + A4*np.square(self.df['T - K']/100) + self.df['Salinity']*(B1 + B2*(self.df['T - K']/100) + B3*(np.square(self.df['T - K']/100))))
                              
     def Sc(self):
-        """ Calculates Schmidt Number (Sc) based on polynomial from Wanninkhof, 2014 """ 
+        """
+        Calculating Schmidt Number (Sc) based on polynomial from Wanninkhof, 2014
+        
+        """ 
         
         if self.gas == 'CO2':
             self.df['Sc freshwater'] = 1923.6 - 125.06 * self.df['T'] + 4.3773*np.power(self.df['T'], 2) - 0.085681*np.power(self.df['T'], 3) + 0.00070284*np.power(self.df['T'], 4)
@@ -103,9 +114,10 @@ class Fluxes:
         """
         Calculates k600 [cm/h] using relationship with wind from Cole & Caraco, 1998
         Only used for lake and flood data
- 
+    
         """                 
-      
+
+        # Calculate k600        
         self.df['k600'] = 2.07 + 0.215 * np.power(self.df['wind speed'], 1.7) 
        
         return self.df
@@ -114,12 +126,7 @@ class Fluxes:
     def uniform_k600_lit(self, fname, dis_n):
         """
         Monte Carlo uncertainties with uniform distribution for k600 values from literature
-        these are then randomly assigned to each data entry (sample)
-        
-        :fname: excel file with literature k600 values to be used
-        :dis_n: uniform distribution size generated
-        :return: dataframe with randomly assigned generated k600 values to fluvial sites
-        
+        these are then ramdoly assigned to each data entry (sample)
         """ 
         
         self.df_k600 = pd.read_excel(fname, index_col=0, engine='openpyxl', skiprows=1)
@@ -170,7 +177,9 @@ class Fluxes:
 
 
     def k(self):
-        """Calculates k using k600 and Sc""" 
+        """
+        Calculates k using k600 and Sc
+        """ 
 
         for i in range(len(self.df)):
             row = self.df.iloc[i]
@@ -183,7 +192,7 @@ class Fluxes:
 
     
     def bootstrap_replicate_1d(self, data, func):
-        """ Generate bootstrap replicate of 1D data. """
+        """Generate bootstrap replicate of 1D data."""
         
         bs_sample = np.random.choice(data, len(data))
         
@@ -191,7 +200,9 @@ class Fluxes:
     
     
     def draw_bs_reps(self, data, func, size):
-        """  Draw bootstrap replicates  """ 
+        """
+        Draw bootstrap replicates
+        """ 
         
         # Initialise array or replicates
         bs_replicates = np.empty(size)
@@ -255,7 +266,6 @@ class Fluxes:
         # in g/mol
         co2_atomic_mass = 44.01
         ch4_atomic_mass = 16.04
-        n2o_atomic_mass = 44.013
         
         boot_data = {cols[0]: cs, cols[1]: ceq, cols[2]: ks}
         self.df_boot = pd.DataFrame(boot_data)
@@ -313,25 +323,21 @@ class Fluxes:
         n2o_sgwp = 270
         n2o_sgcp = 349
         if self.gas == 'diss CH4':
-            # First convert CH4 flux from mmol m-2 d-1 to kg m-2 d-1
-                self.df_boot[flux_gwp] = (self.df_boot[flux_name]*ch4_atomic_mass *10**-6*ch4_sgwp).where(self.df_boot[flux_name]>0)
-                print('The median of {} in {} is {:0.2f} (kg CO2-eq/m2*d)'.format(self.gas, self.wb_type, self.df_boot[flux_gwp].median())) 
-                print('The standard error of {} in {} is {:0.2f} (kg CO2-eq/m2*d)'.format(self.gas, self.wb_type, self.df_boot[flux_gwp].std())) 
+                self.df_boot[flux_gwp] = (self.df_boot[flux_name]*ch4_sgwp).where(self.df_boot[flux_name]>0)
+                print('The median of {} in {} is {:0.2f} (mmol CO2-eq/m2*d)'.format(self.gas, self.wb_type, self.df_boot[flux_gwp].median())) 
+                print('The standard error of {} in {} is {:0.2f} (mmol CO2-eq/m2*d)'.format(self.gas, self.wb_type, self.df_boot[flux_gwp].std())) 
                 ci_co2eq =  self.df_boot[flux_gwp].quantile([0.05, 0.95])
-                print('95% confidence interval of {} in {} is {:0.2f} to {:0.2f} (kg CO2-eq/m2*d)'.format(self.gas, self.wb_type, ci_co2eq.iloc[0], ci_co2eq.iloc[1])) 
+                print('95% confidence interval of {} in {} is {:0.2f} to {:0.2f} (mmol CO2-eq/m2*d)'.format(self.gas, self.wb_type, ci_co2eq.iloc[0], ci_co2eq.iloc[1])) 
                 #self.df_boot[flux_gwp] = (self.df_boot[flux_name]*ch4_sgcp).where(self.df_boot[flux_name]<0)
         elif self.gas == 'diss N2O':
-            # First convert N2O flux from micromol m-2 d-1 to kg m-2 d-1
-                self.df_boot[flux_gwp] = (self.df_boot[flux_name]*10**-3*n2o_atomic_mass*10**-6*n2o_sgwp).where(self.df_boot[flux_name]>0)
-                self.df_boot[flux_sgcp] = (self.df_boot[flux_name]*10**-3*n2o_atomic_mass*10**-6*n2o_sgcp).where(self.df_boot[flux_name]<0)      
+            # Also convert N2O flux from micromol/L to mmol/L
+                self.df_boot[flux_gwp] = (self.df_boot[flux_name]*10**-3*n2o_sgwp).where(self.df_boot[flux_name]>0)
+                self.df_boot[flux_sgcp] = (self.df_boot[flux_name]*10**-3*n2o_sgcp).where(self.df_boot[flux_name]<0)      
                 self.df_boot[flux_gwp].fillna(self.df_boot[flux_sgcp], inplace=True)
-                print('The median of {} in {} is {:0.2f} (kg CO2-eq/m2*d)'.format(self.gas, self.wb_type, self.df_boot[flux_gwp].median())) 
-                print('The standard error of {} in {} is {:0.2f} (kg CO2-eq/m2*d)'.format(self.gas, self.wb_type, self.df_boot[flux_gwp].std())) 
+                print('The median of {} in {} is {:0.2f} (mmol CO2-eq/m2*d)'.format(self.gas, self.wb_type, self.df_boot[flux_gwp].median())) 
+                print('The standard error of {} in {} is {:0.2f} (mmol CO2-eq/m2*d)'.format(self.gas, self.wb_type, self.df_boot[flux_gwp].std())) 
                 ci_co2eq =  self.df_boot[flux_gwp].quantile([0.05, 0.95])
-                print('95% confidence interval of {} in {} is {:0.2f} to {:0.2f} (kg CO2-eq/m2*d)'.format(self.gas, self.wb_type, ci_co2eq.iloc[0], ci_co2eq.iloc[1])) 
-        else:
-        # Convert CO2 fluxes to CO2 kg m-2 d-1   
-            self.df_boot[flux_gwp] = (self.df_boot[flux_name]*co2_atomic_mass *10**-6)
+                print('95% confidence interval of {} in {} is {:0.2f} to {:0.2f} (mmol CO2-eq/m2*d)'.format(self.gas, self.wb_type, ci_co2eq.iloc[0], ci_co2eq.iloc[1])) 
                  
         return self.df_boot
     
@@ -347,13 +353,7 @@ class tundra_flux:
     def readin_fluxes_tch4(self, fname, startdate_, enddate_, usecase):
         """
         Returns an array of tundra CH4 fluxes in units of mg CH4-C m-2 d-1 or mmol CO2-eq m-2 d-1
-        :param fname: file path and name of file with EC data
-        :param startdate_: date to start EC data selection on
-        :param enddate_: date to end EC data selection on
-        :param usecase: indicate CH4-C to convert fluxes to mg CH4-C m-2 d-1 any other string to convert to mmol CO2-eq m-2 d-1
-        :return: dataframe without outliers based on 1.5IQR
         """
-        
         fluxnet = pd.read_csv(fname, delimiter=(','))
         fluxnet = fluxnet[['TIMESTAMP_START', 'FCH4_F', 'WD']]
         # tundra units nmolCH4 m-2 s-1
@@ -422,8 +422,8 @@ class tundra_flux:
             ch4_sgwp = 45
             ch4_sgcp = 203
             
-            t_flux_16['ch4 flux co2-eq'] = (t_flux_16['ch4_mmol']*ch4_atomic_mass *10**-6*ch4_sgwp).where(t_flux_16['ch4_mmol']>0)
-            t_flux_16['ch4 sgcp'] = (t_flux_16['ch4_mmol']*ch4_atomic_mass *10**-6*ch4_sgcp).where(t_flux_16['ch4_mmol']<0)
+            t_flux_16['ch4 flux co2-eq'] = (t_flux_16['ch4_mmol']*ch4_sgwp).where(t_flux_16['ch4_mmol']>0)
+            t_flux_16['ch4 sgcp'] = (t_flux_16['ch4_mmol']*ch4_sgcp).where(t_flux_16['ch4_mmol']<0)
             t_flux_16['ch4 flux co2-eq'].fillna(t_flux_16['ch4 sgcp'], inplace=True)
             
             # Select fluxes in low surface water (< 0.5%) wind areas, from Parmentier et al., 2001
@@ -431,7 +431,7 @@ class tundra_flux:
             t_flux_16_dry2 = t_flux_16.drop(t_flux_16[(t_flux_16.WD > 95)].index)
             t_flux_16_mixed = t_flux_16.drop(t_flux_16[(t_flux_16.WD > 250) | (t_flux_16.WD < 190)].index)
             
-            # Create new array with fluxes from wind areas in unit kg CO2-eq m-2 d-1
+            # Create new array with fluxes from wind areas in unit mmol CO2-eq m-2 d-1
             self.flux_array = np.array(t_flux_16_dry1['ch4 flux co2-eq'])
             a = t_flux_16_dry2['ch4 flux co2-eq'].to_numpy()
             b = t_flux_16_mixed['ch4 flux co2-eq'].to_numpy()
@@ -442,11 +442,13 @@ class tundra_flux:
             
         
     def readin_fluxes_tn2o(self, fname):
-        """ Returns an array of tundra N2O fluxes in units of mmol CO2-eq m-2 d-1 """
-        
+        """
+        Returns an array of tundra N2O fluxes in units of mmol CO2-eq m-2 d-1
+        """
         n2o_tundra = pd.read_excel(fname, engine='openpyxl', skiprows=1)
-        # Convert from microg m-2 d-1 to kg m-2 d-1
-        n2o_tundra['n2o flux'] =  n2o_tundra['flux'] * 10**-9
+        # Convert to mmol m-2 d-1
+        n2o_atomic_mass = 44.013
+        n2o_tundra['n2o flux'] =  n2o_tundra['flux'] * 10**-6 / n2o_atomic_mass  * 10**3
         
         n2o_sgwp = 270
         n2o_sgcp = 349
@@ -459,13 +461,8 @@ class tundra_flux:
         
     def readin_fluxes_tco2(self, fname, startdate_, enddate_, usecase):
         """
-        Returns an array of tundra CO2 fluxes in units of mg CO2-C m-2 d-1 or mmol m-2 d-1
-        :param fname: file path and name of file with EC data
-        :param startdate_: date to start EC data selection on
-        :param enddate_: date to end EC data selection on
-        :param usecase: indicate CO2-C to convert fluxes to mg CO2-C m-2 d-1 any other string to convert to mmol  m-2 d-1
+        Returns an array of tundra CO2 fluxes in units of mmol CO2-C m-2 d-1
         """
-        
         flux = pd.read_csv(fname, delimiter=(','), dtype={'TIMESTAMP1': str, 'WD_10': float, 'NEE_filter_ustar': float})
         # tundra units micromol CO2 m-2 s-1
 
@@ -543,7 +540,7 @@ class tundra_flux:
         
         
     def bootstrap_replicate_1d(self, data, func):
-        """ Generate bootstrap replicate of 1D data. """
+        """Generate bootstrap replicate of 1D data."""
         
         bs_sample = np.random.choice(data, len(data))
         
@@ -551,7 +548,9 @@ class tundra_flux:
     
     
     def draw_bs_reps(self, data, func, size):
-        """ Draw bootstrap replicates """ 
+        """
+        Draw bootstrap replicates
+        """ 
         
         # Initialise array or replicates
         bs_replicates = np.empty(size)
